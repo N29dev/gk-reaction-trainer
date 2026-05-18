@@ -543,6 +543,50 @@
 
     option { color: #0d1224; }
 
+    .option-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.065);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 18px;
+      padding: 12px 14px;
+      color: #c8d1ec;
+      font-size: 14px;
+    }
+
+    .toggle-row input {
+      width: 20px;
+      height: 20px;
+      accent-color: #8fd8ff;
+    }
+
+    body.hide-target-boxes .target-box {
+      opacity: 0;
+      border-color: transparent;
+      background: transparent;
+      color: transparent;
+      box-shadow: none;
+    }
+
+    body.hide-center-box .box-center {
+      opacity: 0;
+      border-color: transparent;
+      background: transparent;
+      color: transparent;
+      box-shadow: none;
+    }
+
+    body.hide-height-cue .height-cue {
+      display: none;
+    }
+
     @media (max-width: 850px) {
       .app { grid-template-columns: 1fr; }
       .arena { min-height: 730px; }
@@ -637,6 +681,26 @@
       </div>
 
       <div>
+        <div class="section-title">Game mode</div>
+        <select id="gameMode">
+          <option value="all">All shots: top, low, center</option>
+          <option value="lowCenter">Only low boxes + center</option>
+          <option value="topCenter">Only top boxes + center</option>
+          <option value="sideOnly">Side boxes only, no center</option>
+          <option value="centerOnly">Center only</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="section-title">Layout options</div>
+        <div class="option-list">
+          <label class="toggle-row"><span>Show 5 target boxes</span><input type="checkbox" id="showBoxes" checked></label>
+          <label class="toggle-row"><span>Show center box</span><input type="checkbox" id="showCenterBox" checked></label>
+          <label class="toggle-row"><span>Show TOP/LOW text</span><input type="checkbox" id="showHeightCue" checked></label>
+        </div>
+      </div>
+
+      <div>
         <div class="section-title">Controls</div>
         <div class="keys">
           <div class="key-row"><span>Center box</span><b>Space</b></div>
@@ -689,6 +753,10 @@
     const autoBtn = document.getElementById("autoBtn");
     const resetBtn = document.getElementById("resetBtn");
     const difficulty = document.getElementById("difficulty");
+    const gameMode = document.getElementById("gameMode");
+    const showBoxes = document.getElementById("showBoxes");
+    const showCenterBox = document.getElementById("showCenterBox");
+    const showHeightCue = document.getElementById("showHeightCue");
     const historyBox = document.getElementById("history");
 
     const lastStat = document.getElementById("lastStat");
@@ -706,6 +774,10 @@
     let pressed = new Set();
     let attempts = JSON.parse(localStorage.getItem("gkReactionAttempts") || "[]");
     let autoNext = JSON.parse(localStorage.getItem("gkAutoNext") || "false");
+    gameMode.value = localStorage.getItem("gkGameMode") || "all";
+    showBoxes.checked = JSON.parse(localStorage.getItem("gkShowBoxes") || "true");
+    showCenterBox.checked = JSON.parse(localStorage.getItem("gkShowCenterBox") || "true");
+    showHeightCue.checked = JSON.parse(localStorage.getItem("gkShowHeightCue") || "true");
     let autoTimer = null;
     let autoCountdown = null;
 
@@ -721,6 +793,36 @@
     function save() {
       localStorage.setItem("gkReactionAttempts", JSON.stringify(attempts.slice(-100)));
       localStorage.setItem("gkAutoNext", JSON.stringify(autoNext));
+      localStorage.setItem("gkGameMode", gameMode.value);
+      localStorage.setItem("gkShowBoxes", JSON.stringify(showBoxes.checked));
+      localStorage.setItem("gkShowCenterBox", JSON.stringify(showCenterBox.checked));
+      localStorage.setItem("gkShowHeightCue", JSON.stringify(showHeightCue.checked));
+    }
+
+    function applyLayoutOptions() {
+      document.body.classList.toggle("hide-target-boxes", !showBoxes.checked);
+      document.body.classList.toggle("hide-center-box", !showCenterBox.checked);
+      document.body.classList.toggle("hide-height-cue", !showHeightCue.checked);
+    }
+
+    function getShotPool() {
+      if (gameMode.value === "lowCenter") {
+        return shotTypes.filter(s => s.box === "center" || s.height === "low");
+      }
+
+      if (gameMode.value === "topCenter") {
+        return shotTypes.filter(s => s.box === "center" || s.height === "high");
+      }
+
+      if (gameMode.value === "sideOnly") {
+        return shotTypes.filter(s => s.box !== "center");
+      }
+
+      if (gameMode.value === "centerOnly") {
+        return shotTypes.filter(s => s.box === "center");
+      }
+
+      return shotTypes;
     }
 
     function ms(value) {
@@ -843,7 +945,8 @@
       cancelAutoNext();
       clearTimeout(timer);
       state = "waiting";
-      currentShot = shotTypes[Math.floor(Math.random() * shotTypes.length)];
+      const shotPool = getShotPool();
+      currentShot = shotPool[Math.floor(Math.random() * shotPool.length)];
       currentEnemy = enemyPositions[Math.floor(Math.random() * enemyPositions.length)];
       signalTime = 0;
       keyTimes = {};
@@ -1025,6 +1128,18 @@
 
     startBtn.addEventListener("click", startRound);
 
+    gameMode.addEventListener("change", () => {
+      save();
+      if (state === "idle") roundInfo.textContent = "Mode saved";
+    });
+
+    [showBoxes, showCenterBox, showHeightCue].forEach(option => {
+      option.addEventListener("change", () => {
+        applyLayoutOptions();
+        save();
+      });
+    });
+
     autoBtn.addEventListener("click", () => {
       autoNext = !autoNext;
       save();
@@ -1049,6 +1164,7 @@
       startBtn.textContent = "Start round";
     });
 
+    applyLayoutOptions();
     updateAutoButton();
     renderStats();
   </script>

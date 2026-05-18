@@ -25,9 +25,9 @@
     }
 
     .app {
-      width: min(1100px, 100%);
+      width: min(1120px, 100%);
       display: grid;
-      grid-template-columns: 1.5fr 0.9fr;
+      grid-template-columns: 1.55fr 0.9fr;
       gap: 20px;
     }
 
@@ -40,7 +40,7 @@
     }
 
     .arena {
-      min-height: 700px;
+      min-height: 720px;
       padding: 28px;
       display: flex;
       flex-direction: column;
@@ -69,7 +69,7 @@
       margin-top: 10px;
       font-size: 15px;
       line-height: 1.45;
-      max-width: 700px;
+      max-width: 720px;
     }
 
     .pill {
@@ -102,7 +102,7 @@
       margin-top: 14px;
       font-size: 17px;
       line-height: 1.45;
-      max-width: 760px;
+      max-width: 800px;
     }
 
     .combo {
@@ -130,7 +130,7 @@
     .reaction-zone {
       position: relative;
       z-index: 1;
-      min-height: 390px;
+      min-height: 410px;
       margin: 6px 0 26px;
       border-radius: 26px;
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -174,16 +174,56 @@
       opacity: 1;
     }
 
+    .pitch-plane {
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      bottom: -10px;
+      height: 230px;
+      background:
+        linear-gradient(to top, rgba(20, 170, 140, 0.18), rgba(20, 170, 140, 0.02)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 54px);
+      clip-path: polygon(8% 100%, 92% 100%, 66% 0, 34% 0);
+      transform: perspective(540px) rotateX(58deg);
+      transform-origin: bottom center;
+      border-bottom: 2px solid rgba(255,255,255,0.12);
+    }
+
+    .depth-line {
+      position: absolute;
+      bottom: 0;
+      width: 2px;
+      height: 230px;
+      background: linear-gradient(to top, rgba(255,255,255,0.32), transparent);
+      transform-origin: bottom center;
+    }
+
+    .dl-left { left: 29%; transform: rotate(-20deg); }
+    .dl-center { left: 50%; transform: rotate(0deg); }
+    .dl-right { left: 71%; transform: rotate(20deg); }
+
+    .goal-shadow {
+      position: absolute;
+      left: 13%;
+      right: 13%;
+      top: 320px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.26);
+      filter: blur(8px);
+    }
+
     .goal-cage {
       position: absolute;
       left: 12%;
       right: 12%;
       top: 70px;
-      height: 245px;
+      height: 255px;
       border: 4px solid rgba(210, 250, 255, 0.82);
       background: rgba(92, 210, 230, 0.13);
       box-shadow: inset 0 -72px 0 rgba(0, 70, 150, 0.22), 0 0 34px rgba(140, 245, 255, 0.14);
       overflow: hidden;
+      transform: perspective(900px) rotateX(2deg);
     }
 
     .net-grid {
@@ -194,36 +234,72 @@
         repeating-linear-gradient(0deg, rgba(220, 255, 255, 0.24) 0 1px, transparent 1px 18px);
     }
 
-    .target-bin {
+    .target-box {
       position: absolute;
-      border: 2px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.035);
+      border: 2px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.04);
       border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.42);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
     }
 
-    .target-bin.active {
-      border-color: rgba(255,255,255,0.95);
-      background: rgba(255,255,255,0.15);
-      box-shadow: 0 0 28px rgba(255,255,255,0.34), inset 0 0 20px rgba(255,255,255,0.12);
+    .target-box.active {
+      border-color: rgba(255,255,255,0.98);
+      background: rgba(255,255,255,0.16);
+      color: white;
+      box-shadow: 0 0 30px rgba(255,255,255,0.38), inset 0 0 20px rgba(255,255,255,0.14);
     }
 
-    .bin-left-high { left: 4%; top: 6%; width: 26%; height: 34%; }
-    .bin-right-high { right: 4%; top: 6%; width: 26%; height: 34%; }
-    .bin-left-low { left: 4%; bottom: 7%; width: 26%; height: 32%; }
-    .bin-right-low { right: 4%; bottom: 7%; width: 26%; height: 32%; }
-    .bin-center { left: 37%; top: 30%; width: 26%; height: 42%; }
+    .box-left-high { left: 4%; top: 6%; width: 26%; height: 34%; }
+    .box-right-high { right: 4%; top: 6%; width: 26%; height: 34%; }
+    .box-left-low { left: 4%; bottom: 7%; width: 26%; height: 32%; }
+    .box-right-low { right: 4%; bottom: 7%; width: 26%; height: 32%; }
+    .box-center { left: 37%; top: 30%; width: 26%; height: 42%; }
 
-    .shooter-dot {
+    .enemy-cube {
+      position: absolute;
+      left: var(--enemy-x, 50%);
+      bottom: var(--enemy-y, 32px);
+      width: 38px;
+      height: 38px;
+      transform: translateX(-50%);
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ff6565 0%, #d31414 48%, #7a0000 100%);
+      border: 2px solid rgba(255,255,255,0.38);
+      box-shadow:
+        0 0 22px rgba(255, 65, 65, 0.45),
+        0 18px 24px rgba(0,0,0,0.30),
+        inset -7px -7px 12px rgba(0,0,0,0.26),
+        inset 5px 5px 9px rgba(255,255,255,0.14);
+      z-index: 3;
+    }
+
+    .enemy-cube::before {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.09);
+    }
+
+    .enemy-cube::after {
+      content: "ENEMY";
       position: absolute;
       left: 50%;
-      bottom: 28px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #151a34;
-      border: 3px solid #e7ecff;
-      box-shadow: 0 0 0 5px rgba(255,255,255,0.08), 0 0 18px rgba(255,255,255,0.35);
+      top: 43px;
       transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.72);
+      background: rgba(0,0,0,0.28);
+      padding: 3px 7px;
+      border-radius: 999px;
     }
 
     .shot-svg {
@@ -232,13 +308,14 @@
       width: 100%;
       height: 100%;
       overflow: visible;
+      z-index: 2;
     }
 
     .true-line {
       stroke: rgba(255, 255, 255, 0.98);
-      stroke-width: 5;
+      stroke-width: 4.5;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 8px rgba(255,255,255,0.95)) drop-shadow(0 0 22px rgba(255,255,255,0.35));
+      filter: drop-shadow(0 0 8px rgba(255,255,255,0.95)) drop-shadow(0 0 24px rgba(255,255,255,0.38));
     }
 
     .target-dot {
@@ -259,11 +336,12 @@
       font-weight: 900;
       letter-spacing: 0.08em;
       opacity: 0;
+      z-index: 3;
     }
 
     .height-cue.visible { opacity: 1; }
     .height-cue.high { top: 34px; }
-    .height-cue.low { top: 286px; }
+    .height-cue.low { top: 300px; }
 
     .landing-circle {
       position: absolute;
@@ -277,6 +355,7 @@
       background: rgba(255, 216, 78, 0.18);
       box-shadow: 0 0 20px rgba(255, 216, 78, 0.62), inset 0 0 14px rgba(255, 216, 78, 0.30);
       animation: pulseCircle 0.9s infinite alternate ease-in-out;
+      z-index: 1;
     }
 
     @keyframes pulseCircle {
@@ -289,7 +368,7 @@
     .landing-circle.right { left: 66%; }
 
     .keeper {
-      z-index: 2;
+      z-index: 4;
       width: 76px;
       height: 76px;
       border-radius: 22px;
@@ -466,7 +545,7 @@
 
     @media (max-width: 850px) {
       .app { grid-template-columns: 1fr; }
-      .arena { min-height: 710px; }
+      .arena { min-height: 730px; }
       .controls { grid-template-columns: 1fr; }
       .topbar { flex-direction: column; }
     }
@@ -478,14 +557,14 @@
       <div class="topbar">
         <div class="title">
           <h1>GK Reaction Trainer</h1>
-          <p>Train BL:R-style GK reads: follow the white line endpoint. Top side endpoint = Space + side dive, low side endpoint = side dive only. Yellow circle stays on ground and can bait left/right.</p>
+          <p>Train BL:R-style GK reads: red enemy cube shoots from left, center, or right. The white line endpoint on one of 5 boxes is the real save read. Yellow circle stays on ground and can bait left/right.</p>
         </div>
         <div class="pill" id="roundInfo">Ready</div>
       </div>
 
       <div class="center-message">
         <div class="status" id="status">Start</div>
-        <div class="subtitle" id="subtitle">Click start, read where the white line ends, then choose jump, side dive, or jump + side dive.</div>
+        <div class="subtitle" id="subtitle">Click start, read which box the white line hits, then choose jump, side dive, or jump + side dive.</div>
         <div class="combo" id="comboPreview">
           <kbd>SPACE</kbd>
           <span>center save</span>
@@ -494,28 +573,40 @@
 
       <div class="reaction-zone" id="zone">
         <div class="field-visual" id="fieldVisual" aria-hidden="true">
+          <div class="pitch-plane">
+            <div class="depth-line dl-left"></div>
+            <div class="depth-line dl-center"></div>
+            <div class="depth-line dl-right"></div>
+          </div>
+
+          <div class="goal-shadow"></div>
+
           <div class="goal-cage">
             <div class="net-grid"></div>
-            <div class="target-bin bin-left-high" id="bin-left-high"></div>
-            <div class="target-bin bin-right-high" id="bin-right-high"></div>
-            <div class="target-bin bin-left-low" id="bin-left-low"></div>
-            <div class="target-bin bin-right-low" id="bin-right-low"></div>
-            <div class="target-bin bin-center" id="bin-center"></div>
+            <div class="target-box box-left-high" id="box-left-high">TOP L</div>
+            <div class="target-box box-right-high" id="box-right-high">TOP R</div>
+            <div class="target-box box-left-low" id="box-left-low">LOW L</div>
+            <div class="target-box box-right-low" id="box-right-low">LOW R</div>
+            <div class="target-box box-center" id="box-center">CENTER</div>
           </div>
+
           <div class="height-cue" id="heightCue"></div>
+
           <svg class="shot-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line id="trueLine" class="true-line" x1="50" y1="93" x2="50" y2="46"></line>
-            <circle id="targetDot" class="target-dot" cx="50" cy="46" r="1.7"></circle>
+            <line id="trueLine" class="true-line" x1="50" y1="91" x2="50" y2="48"></line>
+            <circle id="targetDot" class="target-dot" cx="50" cy="48" r="1.8"></circle>
           </svg>
-          <div class="shooter-dot"></div>
+
+          <div class="enemy-cube" id="enemyCube"></div>
           <div class="landing-circle" id="landingCircle"></div>
         </div>
+
         <div class="keeper" id="keeper"></div>
       </div>
 
       <div class="controls">
         <div class="hint">
-          Visual rule: <b>look at the white line endpoint</b>. Yellow circle is only ground bait. Center endpoint = <b>Space</b>. Low side endpoint = <b>A/D + Q</b>. Top side endpoint = <b>Space + A/D + Q</b>.
+          Rule: <b>read the white line endpoint</b>. Center box = <b>Space</b>. Low side box = <b>A/D + Q</b>. Top side box = <b>Space + A/D + Q</b>. Yellow circle is only ground bait.
         </div>
         <div>
           <button id="startBtn">Start round</button>
@@ -548,11 +639,11 @@
       <div>
         <div class="section-title">Controls</div>
         <div class="keys">
-          <div class="key-row"><span>Center / jump save</span><b>Space</b></div>
-          <div class="key-row"><span>Low right side</span><b>D + Q</b></div>
-          <div class="key-row"><span>Low left side</span><b>A + Q</b></div>
-          <div class="key-row"><span>Top right side</span><b>Space + D + Q</b></div>
-          <div class="key-row"><span>Top left side</span><b>Space + A + Q</b></div>
+          <div class="key-row"><span>Center box</span><b>Space</b></div>
+          <div class="key-row"><span>Low right box</span><b>D + Q</b></div>
+          <div class="key-row"><span>Low left box</span><b>A + Q</b></div>
+          <div class="key-row"><span>Top right box</span><b>Space + D + Q</b></div>
+          <div class="key-row"><span>Top left box</span><b>Space + A + Q</b></div>
           <div class="key-row"><span>Start / next round</span><b>Enter</b></div>
         </div>
       </div>
@@ -567,13 +658,19 @@
   <script>
     const directions = ["front", "left", "right"];
 
+    const enemyPositions = [
+      { id: "left", label: "left enemy", x: 18, y: 88, cssX: "18%", cssY: "38px" },
+      { id: "center", label: "center enemy", x: 50, y: 91, cssX: "50%", cssY: "30px" },
+      { id: "right", label: "right enemy", x: 82, y: 88, cssX: "82%", cssY: "38px" }
+    ];
+
     const shotTypes = [
-      { id: "centerHigh", direction: "front", height: "high", needsJump: true, needsDive: false, text: "center jump save", input: "Space", target: { x: 50, y: 42 }, bin: "center" },
-      { id: "centerLow", direction: "front", height: "low", needsJump: true, needsDive: false, text: "center ping/jump save", input: "Space", target: { x: 50, y: 62 }, bin: "center" },
-      { id: "leftLow", direction: "left", height: "low", needsJump: false, needsDive: true, text: "low left side", input: "A + Q", target: { x: 24, y: 67 }, bin: "left-low" },
-      { id: "rightLow", direction: "right", height: "low", needsJump: false, needsDive: true, text: "low right side", input: "D + Q", target: { x: 76, y: 67 }, bin: "right-low" },
-      { id: "leftHigh", direction: "left", height: "high", needsJump: true, needsDive: true, text: "top left side", input: "Space + A + Q", target: { x: 23, y: 27 }, bin: "left-high" },
-      { id: "rightHigh", direction: "right", height: "high", needsJump: true, needsDive: true, text: "top right side", input: "Space + D + Q", target: { x: 77, y: 27 }, bin: "right-high" }
+      { id: "centerHigh", direction: "front", height: "high", needsJump: true, needsDive: false, text: "center box", input: "Space", target: { x: 50, y: 44 }, box: "center" },
+      { id: "centerLow", direction: "front", height: "low", needsJump: true, needsDive: false, text: "center box", input: "Space", target: { x: 50, y: 60 }, box: "center" },
+      { id: "leftLow", direction: "left", height: "low", needsJump: false, needsDive: true, text: "low left box", input: "A + Q", target: { x: 24, y: 68 }, box: "left-low" },
+      { id: "rightLow", direction: "right", height: "low", needsJump: false, needsDive: true, text: "low right box", input: "D + Q", target: { x: 76, y: 68 }, box: "right-low" },
+      { id: "leftHigh", direction: "left", height: "high", needsJump: true, needsDive: true, text: "top left box", input: "Space + A + Q", target: { x: 23, y: 28 }, box: "left-high" },
+      { id: "rightHigh", direction: "right", height: "high", needsJump: true, needsDive: true, text: "top right box", input: "Space + D + Q", target: { x: 77, y: 28 }, box: "right-high" }
     ];
 
     const zone = document.getElementById("zone");
@@ -582,14 +679,15 @@
     const comboPreview = document.getElementById("comboPreview");
     const keeper = document.getElementById("keeper");
     const fieldVisual = document.getElementById("fieldVisual");
+    const enemyCube = document.getElementById("enemyCube");
     const landingCircle = document.getElementById("landingCircle");
     const trueLine = document.getElementById("trueLine");
     const targetDot = document.getElementById("targetDot");
     const heightCue = document.getElementById("heightCue");
     const roundInfo = document.getElementById("roundInfo");
     const startBtn = document.getElementById("startBtn");
-    const resetBtn = document.getElementById("resetBtn");
     const autoBtn = document.getElementById("autoBtn");
+    const resetBtn = document.getElementById("resetBtn");
     const difficulty = document.getElementById("difficulty");
     const historyBox = document.getElementById("history");
 
@@ -601,6 +699,7 @@
     let state = "idle";
     let timer = null;
     let currentShot = null;
+    let currentEnemy = null;
     let currentCircleDirection = null;
     let signalTime = 0;
     let keyTimes = {};
@@ -624,6 +723,22 @@
       localStorage.setItem("gkAutoNext", JSON.stringify(autoNext));
     }
 
+    function ms(value) {
+      return `${Math.round(value)}ms`;
+    }
+
+    function renderCombo(keys, label) {
+      comboPreview.innerHTML = keys.map(k => `<kbd>${k}</kbd>`).join("<span>+</span>") + `<span>${label}</span>`;
+    }
+
+    function setZone(mode) {
+      zone.className = `reaction-zone ${mode || ""}`.trim();
+    }
+
+    function resetKeeper() {
+      keeper.className = "keeper";
+    }
+
     function updateAutoButton() {
       autoBtn.textContent = autoNext ? "Auto next: ON" : "Auto next: OFF";
     }
@@ -641,6 +756,7 @@
 
       let left = 5;
       roundInfo.textContent = `Next in ${left}s`;
+
       autoCountdown = setInterval(() => {
         left -= 1;
         if (left > 0 && state === "result") {
@@ -653,36 +769,24 @@
       }, 5000);
     }
 
-    function ms(value) {
-      return `${Math.round(value)}ms`;
-    }
-
-    function renderCombo(keys, label) {
-      comboPreview.innerHTML = keys.map(k => `<kbd>${k}</kbd>`).join("<span>+</span>") + `<span>${label}</span>`;
-    }
-
-    function setZone(mode) {
-      zone.className = `reaction-zone ${mode || ""}`.trim();
-    }
-
-    function resetKeeper() {
-      keeper.className = "keeper";
-    }
-
-    function clearBins() {
-      document.querySelectorAll(".target-bin").forEach(bin => bin.classList.remove("active"));
+    function clearBoxes() {
+      document.querySelectorAll(".target-box").forEach(box => box.classList.remove("active"));
     }
 
     function hideBallRead() {
       fieldVisual.className = "field-visual";
       landingCircle.className = "landing-circle";
+      trueLine.setAttribute("x1", "50");
+      trueLine.setAttribute("y1", "91");
       trueLine.setAttribute("x2", "50");
-      trueLine.setAttribute("y2", "46");
+      trueLine.setAttribute("y2", "48");
       targetDot.setAttribute("cx", "50");
-      targetDot.setAttribute("cy", "46");
+      targetDot.setAttribute("cy", "48");
+      enemyCube.style.setProperty("--enemy-x", "50%");
+      enemyCube.style.setProperty("--enemy-y", "30px");
       heightCue.className = "height-cue";
       heightCue.textContent = "";
-      clearBins();
+      clearBoxes();
     }
 
     function chooseLandingCircle(trueDirection) {
@@ -696,20 +800,24 @@
       currentCircleDirection = chooseLandingCircle(currentShot.direction);
       fieldVisual.className = "field-visual visible";
 
-      trueLine.setAttribute("x1", "50");
-      trueLine.setAttribute("y1", "93");
+      enemyCube.style.setProperty("--enemy-x", currentEnemy.cssX);
+      enemyCube.style.setProperty("--enemy-y", currentEnemy.cssY);
+
+      trueLine.setAttribute("x1", String(currentEnemy.x));
+      trueLine.setAttribute("y1", String(currentEnemy.y));
       trueLine.setAttribute("x2", String(currentShot.target.x));
       trueLine.setAttribute("y2", String(currentShot.target.y));
       targetDot.setAttribute("cx", String(currentShot.target.x));
       targetDot.setAttribute("cy", String(currentShot.target.y));
 
       landingCircle.className = `landing-circle ${currentCircleDirection}`;
-      heightCue.className = `height-cue ${currentShot.height} visible`;
-      heightCue.textContent = currentShot.height === "high" ? "TOP ENDPOINT" : "LOW ENDPOINT";
 
-      clearBins();
-      const activeBin = document.getElementById(`bin-${currentShot.bin}`);
-      if (activeBin) activeBin.classList.add("active");
+      heightCue.className = `height-cue ${currentShot.height} visible`;
+      heightCue.textContent = currentShot.height === "high" ? "TOP BOX" : "LOW / CENTER BOX";
+
+      clearBoxes();
+      const activeBox = document.getElementById(`box-${currentShot.box}`);
+      if (activeBox) activeBox.classList.add("active");
     }
 
     function renderStats() {
@@ -736,6 +844,7 @@
       clearTimeout(timer);
       state = "waiting";
       currentShot = shotTypes[Math.floor(Math.random() * shotTypes.length)];
+      currentEnemy = enemyPositions[Math.floor(Math.random() * enemyPositions.length)];
       signalTime = 0;
       keyTimes = {};
       pressed.clear();
@@ -744,7 +853,7 @@
       setZone("waiting");
 
       statusText.textContent = "WAIT";
-      subtitle.textContent = "Get ready. The white line endpoint will show the real save type.";
+      subtitle.textContent = "Get ready. Red enemy can shoot from any side. The white line endpoint shows the save.";
       renderCombo(["A", "D", "Q", "SPACE"], "do not pre-press");
       roundInfo.textContent = `Round ${attempts.length + 1}`;
       startBtn.textContent = "Restart";
@@ -762,7 +871,7 @@
       showBallRead();
 
       statusText.textContent = "READ";
-      subtitle.textContent = "Read the white endpoint: center = jump, low side = side dive, top side = jump + side dive.";
+      subtitle.textContent = `${currentEnemy.label}. Read the white line to one of 5 boxes.`;
       renderCombo(["A", "D", "Q", "SPACE"], "choose save input");
       roundInfo.textContent = currentCircleDirection === currentShot.direction ? "True circle" : "Circle feint";
     }
@@ -858,7 +967,7 @@
         roundInfo.textContent = "Saved";
       } else {
         statusText.textContent = "WRONG SAVE";
-        subtitle.textContent = `You pressed ${detected.label}, but the white endpoint needed ${currentShot.input}.`;
+        subtitle.textContent = `You pressed ${detected.label}, but the white line needed ${currentShot.input}.`;
         roundInfo.textContent = "Goal conceded";
       }
 
@@ -868,7 +977,8 @@
         expected: currentShot.input,
         pressed: detected.label,
         reason: correct ? null : "wrong input",
-        yellowCircle: `ground ${currentCircleDirection}`
+        yellowCircle: `ground ${currentCircleDirection}`,
+        enemy: currentEnemy.id
       });
 
       save();
@@ -933,7 +1043,7 @@
       resetKeeper();
       hideBallRead();
       statusText.textContent = "Start";
-      subtitle.textContent = "Click start, read where the white line ends, then choose jump, side dive, or jump + side dive.";
+      subtitle.textContent = "Click start, read which box the white line hits, then choose jump, side dive, or jump + side dive.";
       renderCombo(["SPACE"], "center save");
       roundInfo.textContent = "Ready";
       startBtn.textContent = "Start round";

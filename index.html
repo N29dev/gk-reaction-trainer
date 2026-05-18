@@ -548,6 +548,48 @@
       gap: 10px;
     }
 
+    .bind-grid {
+      display: grid;
+      gap: 9px;
+    }
+
+    .bind-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.065);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 18px;
+      padding: 10px 12px;
+      color: #c8d1ec;
+      font-size: 14px;
+    }
+
+    .bind-btn {
+      min-width: 90px;
+      padding: 9px 12px;
+      border-radius: 13px;
+      font-size: 13px;
+      box-shadow: none;
+      background: rgba(255,255,255,0.10);
+      color: #eaf0ff;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .bind-btn.listening {
+      background: rgba(255,216,78,0.24);
+      color: #fff4bb;
+      border-color: rgba(255,216,78,0.48);
+    }
+
+    .small-note {
+      color: #94a2c8;
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
     .toggle-row {
       display: flex;
       justify-content: space-between;
@@ -701,6 +743,18 @@
       </div>
 
       <div>
+        <div class="section-title">Keybinds</div>
+        <div class="bind-grid">
+          <div class="bind-row"><span>Left</span><button class="bind-btn" data-bind="left">A</button></div>
+          <div class="bind-row"><span>Right</span><button class="bind-btn" data-bind="right">D</button></div>
+          <div class="bind-row"><span>Dive</span><button class="bind-btn" data-bind="dive">Q</button></div>
+          <div class="bind-row"><span>Jump</span><button class="bind-btn" data-bind="jump">Space</button></div>
+          <div class="bind-row"><span>Start / next</span><button class="bind-btn" data-bind="start">Enter</button></div>
+        </div>
+        <div class="small-note">Click a button, then press the key you want. Esc cancels. Controller: Xbox LT / PlayStation R1 = dive, A/Cross = jump, stick or D-pad = left/right.</div>
+      </div>
+
+      <div>
         <div class="section-title">Controls</div>
         <div class="keys">
           <div class="key-row"><span>Center box</span><b>Space</b></div>
@@ -759,6 +813,8 @@
     const showHeightCue = document.getElementById("showHeightCue");
     const historyBox = document.getElementById("history");
 
+    const bindButtons = document.querySelectorAll(".bind-btn");
+
     const lastStat = document.getElementById("lastStat");
     const bestStat = document.getElementById("bestStat");
     const avgStat = document.getElementById("avgStat");
@@ -774,6 +830,18 @@
     let pressed = new Set();
     let attempts = JSON.parse(localStorage.getItem("gkReactionAttempts") || "[]");
     let autoNext = JSON.parse(localStorage.getItem("gkAutoNext") || "false");
+
+    let keybinds = JSON.parse(localStorage.getItem("gkKeybinds") || "null") || {
+      left: "a",
+      right: "d",
+      dive: "q",
+      jump: " ",
+      start: "enter"
+    };
+
+    let waitingForBind = null;
+    let controllerPrev = {};
+    let controllerLoopStarted = false;
     gameMode.value = localStorage.getItem("gkGameMode") || "all";
     showBoxes.checked = JSON.parse(localStorage.getItem("gkShowBoxes") || "true");
     showCenterBox.checked = JSON.parse(localStorage.getItem("gkShowCenterBox") || "true");
@@ -797,6 +865,93 @@
       localStorage.setItem("gkShowBoxes", JSON.stringify(showBoxes.checked));
       localStorage.setItem("gkShowCenterBox", JSON.stringify(showCenterBox.checked));
       localStorage.setItem("gkShowHeightCue", JSON.stringify(showHeightCue.checked));
+      localStorage.setItem("gkKeybinds", JSON.stringify(keybinds));
+    }
+
+    function keyLabel(key) {
+      if (key === " ") return "Space";
+      if (key === "enter") return "Enter";
+      if (key === "escape") return "Esc";
+      if (key.length === 1) return key.toUpperCase();
+      return key[0].toUpperCase() + key.slice(1);
+    }
+
+    function updateBindButtons() {
+      bindButtons.forEach(btn => {
+        const action = btn.dataset.bind;
+        btn.textContent = keyLabel(keybinds[action]);
+        btn.classList.toggle("listening", waitingForBind === action);
+      });
+    }
+
+    function getActionFromKey(key) {
+      return Object.keys(keybinds).find(action => keybinds[action] === key) || null;
+    }
+
+    function runAction(action, source = "keyboard") {
+      if (action === "start") {
+        if (state === "idle" || state === "result") startRound();
+        return;
+      }
+
+      if (!["left", "right", "dive", "jump"].includes(action)) return;
+
+      if (state === "waiting") {
+        falseStart(source === "controller" ? action : keyLabel(keybinds[action]));
+        return;
+      }
+
+      if (state !== "signal") return;
+
+      const keyMap = {
+        left: "a",
+        right: "d",
+        dive: "q",
+        jump: " "
+      };
+
+      const gameKey = keyMap[action];
+      if (!pressed.has(gameKey)) {
+        pressed.add(gameKey);
+        keyTimes[gameKey] = performance.now();
+      }
+
+      if (action === "dive" || action === "jump") {
+        setTimeout(evaluateSave, jumpWindowMs);
+      }
+    }
+
+    function pollGamepads() {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (const pad of pads) {
+        if (!pad) continue;
+
+        const lx = pad.axes && typeof pad.axes[0] === "number" ? pad.axes[0] : 0;
+        const leftHeld = lx < -0.45 || !!pad.buttons[14]?.pressed;
+        const rightHeld = lx > 0.45 || !!pad.buttons[15]?.pressed;
+
+        const states = {
+          left: leftHeld,
+          right: rightHeld,
+          jump: !!pad.buttons[0]?.pressed,
+          // Xbox LT is usually button 6. PlayStation R1 is usually button 5.
+          dive: !!pad.buttons[6]?.pressed || !!pad.buttons[5]?.pressed,
+          start: !!pad.buttons[9]?.pressed
+        };
+
+        for (const [action, isDown] of Object.entries(states)) {
+          const wasDown = !!controllerPrev[action];
+          if (isDown && !wasDown) runAction(action, "controller");
+          controllerPrev[action] = isDown;
+        }
+      }
+      requestAnimationFrame(pollGamepads);
+    }
+
+    function startControllerLoop() {
+      if (controllerLoopStarted) return;
+      controllerLoopStarted = true;
+      pollGamepads();
     }
 
     function applyLayoutOptions() {
@@ -985,10 +1140,10 @@
       setZone("error");
       resetKeeper();
       statusText.textContent = "TOO EARLY";
-      subtitle.textContent = `You pressed ${key.toUpperCase()} before the signal.`;
+      subtitle.textContent = `You pressed ${String(key).toUpperCase()} before the signal.`;
       renderCombo(["ENTER"], "start again");
       roundInfo.textContent = "False start";
-      attempts.push({ correct: false, expected: currentShot ? currentShot.input : "unknown", pressed: key.toUpperCase(), reason: "too early" });
+      attempts.push({ correct: false, expected: currentShot ? currentShot.input : "unknown", pressed: String(key).toUpperCase(), reason: "too early" });
       save();
       renderStats();
       startBtn.textContent = "Try again";
@@ -1093,40 +1248,46 @@
 
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
-      if (!["a", "d", "q", " ", "enter"].includes(key)) return;
 
-      if (key === "enter" && (state === "idle" || state === "result")) {
+      if (waitingForBind) {
         event.preventDefault();
-        startRound();
+        if (key === "escape") {
+          waitingForBind = null;
+          updateBindButtons();
+          return;
+        }
+        keybinds[waitingForBind] = key;
+        waitingForBind = null;
+        save();
+        updateBindButtons();
         return;
       }
 
-      if (!["a", "d", "q", " "].includes(key) || event.repeat) return;
-
-      if (state === "waiting") {
-        falseStart(key);
-        return;
-      }
-
-      if (state !== "signal") return;
+      const action = getActionFromKey(key);
+      if (!action || event.repeat) return;
 
       event.preventDefault();
-
-      if (!pressed.has(key)) {
-        pressed.add(key);
-        keyTimes[key] = performance.now();
-      }
-
-      if (key === "q" || key === " ") {
-        setTimeout(evaluateSave, jumpWindowMs);
-      }
+      runAction(action);
     });
 
     document.addEventListener("keyup", (event) => {
-      pressed.delete(event.key.toLowerCase());
+      const key = event.key.toLowerCase();
+      const action = getActionFromKey(key);
+      const keyMap = { left: "a", right: "d", dive: "q", jump: " " };
+      if (action && keyMap[action]) pressed.delete(keyMap[action]);
     });
 
     startBtn.addEventListener("click", startRound);
+
+    bindButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        waitingForBind = btn.dataset.bind;
+        updateBindButtons();
+      });
+    });
+
+    window.addEventListener("gamepadconnected", startControllerLoop);
+    startControllerLoop();
 
     gameMode.addEventListener("change", () => {
       save();
@@ -1165,6 +1326,7 @@
     });
 
     applyLayoutOptions();
+    updateBindButtons();
     updateAutoButton();
     renderStats();
   </script>

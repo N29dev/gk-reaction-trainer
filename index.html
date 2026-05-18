@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GK Reaction Trainer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(42, 88, 255, 0.22), transparent 34%),
+        linear-gradient(135deg, #070914 0%, #0d1224 52%, #070914 100%);
+      color: #f7f8ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(1100px, 100%);
+      display: grid;
+      grid-template-columns: 1.5fr 0.9fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.075);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(18px);
+    }
+
+    .arena {
+      min-height: 700px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .title h1 {
+      font-size: clamp(28px, 4vw, 46px);
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+    }
+
+    .title p {
+      color: #b9c1dc;
+      margin-top: 10px;
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 700px;
+    }
+
+    .pill {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #dfe6ff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .center-message {
+      position: relative;
+      z-index: 3;
+      padding: 18px 0 12px;
+      min-height: 152px;
+    }
+
+    .status {
+      font-size: clamp(34px, 5vw, 64px);
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      line-height: 0.9;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      color: #b9c1dc;
+      margin-top: 14px;
+      font-size: 17px;
+      line-height: 1.45;
+      max-width: 760px;
+    }
+
+    .combo {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-start;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    kbd {
+      min-width: 54px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+      color: white;
+      font-weight: 850;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .reaction-zone {
+      position: relative;
+      z-index: 1;
+      min-height: 390px;
+      margin: 6px 0 26px;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background:
+        linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.02)),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 56px),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 56px);
+      overflow: hidden;
+      transition: 0.25s ease;
+    }
+
+    .reaction-zone.waiting {
+      background:
+        radial-gradient(circle at center, rgba(255, 196, 72, 0.18), transparent 40%),
+        rgba(255,255,255,0.045);
+    }
+
+    .reaction-zone.go {
+      background:
+        radial-gradient(circle at center, rgba(79, 255, 170, 0.20), transparent 42%),
+        rgba(255,255,255,0.055);
+      transform: scale(1.01);
+    }
+
+    .reaction-zone.error {
+      background:
+        radial-gradient(circle at center, rgba(255, 77, 109, 0.18), transparent 44%),
+        rgba(255,255,255,0.045);
+    }
+
+    .field-visual {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 1;
+    }
+
+    .field-visual.visible {
+      opacity: 1;
+    }
+
+    .goal-cage {
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: 70px;
+      height: 245px;
+      border: 4px solid rgba(210, 250, 255, 0.82);
+      background: rgba(92, 210, 230, 0.13);
+      box-shadow: inset 0 -72px 0 rgba(0, 70, 150, 0.22), 0 0 34px rgba(140, 245, 255, 0.14);
+      overflow: hidden;
+    }
+
+    .net-grid {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(220, 255, 255, 0.28) 0 1px, transparent 1px 18px),
+        repeating-linear-gradient(0deg, rgba(220, 255, 255, 0.24) 0 1px, transparent 1px 18px);
+    }
+
+    .target-bin {
+      position: absolute;
+      border: 2px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.035);
+      border-radius: 18px;
+    }
+
+    .target-bin.active {
+      border-color: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.15);
+      box-shadow: 0 0 28px rgba(255,255,255,0.34), inset 0 0 20px rgba(255,255,255,0.12);
+    }
+
+    .bin-left-high { left: 4%; top: 6%; width: 26%; height: 34%; }
+    .bin-right-high { right: 4%; top: 6%; width: 26%; height: 34%; }
+    .bin-left-low { left: 4%; bottom: 7%; width: 26%; height: 32%; }
+    .bin-right-low { right: 4%; bottom: 7%; width: 26%; height: 32%; }
+    .bin-center { left: 37%; top: 30%; width: 26%; height: 42%; }
+
+    .shooter-dot {
+      position: absolute;
+      left: 50%;
+      bottom: 28px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #151a34;
+      border: 3px solid #e7ecff;
+      box-shadow: 0 0 0 5px rgba(255,255,255,0.08), 0 0 18px rgba(255,255,255,0.35);
+      transform: translateX(-50%);
+    }
+
+    .shot-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .true-line {
+      stroke: rgba(255, 255, 255, 0.98);
+      stroke-width: 5;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 8px rgba(255,255,255,0.95)) drop-shadow(0 0 22px rgba(255,255,255,0.35));
+    }
+
+    .target-dot {
+      fill: white;
+      filter: drop-shadow(0 0 12px rgba(255,255,255,0.95));
+    }
+
+    .height-cue {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.28);
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      opacity: 0;
+    }
+
+    .height-cue.visible { opacity: 1; }
+    .height-cue.high { top: 34px; }
+    .height-cue.low { top: 286px; }
+
+    .landing-circle {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      border: 6px solid #ffd84e;
+      border-radius: 50%;
+      bottom: 88px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 216, 78, 0.18);
+      box-shadow: 0 0 20px rgba(255, 216, 78, 0.62), inset 0 0 14px rgba(255, 216, 78, 0.30);
+      animation: pulseCircle 0.9s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulseCircle {
+      from { transform: translateX(-50%) scale(0.94); opacity: 0.72; }
+      to { transform: translateX(-50%) scale(1.08); opacity: 1; }
+    }
+
+    .landing-circle.front { left: 50%; }
+    .landing-circle.left { left: 34%; }
+    .landing-circle.right { left: 66%; }
+
+    .keeper {
+      z-index: 2;
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #f1f5ff, #7dd3fc);
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+      transition: 0.26s cubic-bezier(.2,.9,.25,1.25);
+    }
+
+    .keeper::before, .keeper::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #0d1224;
+      border-radius: 50%;
+      top: 24px;
+    }
+
+    .keeper::before { left: 18px; }
+    .keeper::after { right: 18px; }
+
+    .keeper.left {
+      transform: translateX(-220%) translateY(-34px) rotate(-35deg) scaleX(1.3);
+    }
+
+    .keeper.right {
+      transform: translateX(120%) translateY(-34px) rotate(35deg) scaleX(1.3);
+    }
+
+    .keeper.jump {
+      transform: translateX(-50%) translateY(-150px) scale(1.16);
+    }
+
+    .keeper.jump.left {
+      transform: translateX(-220%) translateY(-112px) rotate(-35deg) scaleX(1.3);
+    }
+
+    .keeper.jump.right {
+      transform: translateX(120%) translateY(-112px) rotate(35deg) scaleX(1.3);
+    }
+
+    .controls {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: #07101f;
+      background: linear-gradient(135deg, #f7f8ff, #8fd8ff);
+      font-weight: 850;
+      padding: 15px 22px;
+      border-radius: 18px;
+      box-shadow: 0 14px 36px rgba(112, 196, 255, 0.22);
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    button:hover { transform: translateY(-2px); filter: brightness(1.04); }
+    button:active { transform: translateY(1px); }
+
+    .ghost-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #eaf0ff;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: none;
+    }
+
+    .hint {
+      color: #aeb8d4;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .side {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .stat span {
+      display: block;
+      color: #aeb8d4;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    .section-title {
+      font-size: 16px;
+      color: #f4f7ff;
+      margin-bottom: 10px;
+    }
+
+    .keys {
+      display: grid;
+      gap: 10px;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.065);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 18px;
+      padding: 12px 14px;
+      color: #c8d1ec;
+      font-size: 14px;
+    }
+
+    .history {
+      display: grid;
+      gap: 8px;
+      max-height: 220px;
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      color: #cad3ee;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 11px 12px;
+      font-size: 13px;
+    }
+
+    .good { color: #7dffbd; }
+    .bad { color: #ff8aa0; }
+
+    select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: white;
+      padding: 13px 14px;
+      border-radius: 16px;
+      outline: none;
+    }
+
+    option { color: #0d1224; }
+
+    @media (max-width: 850px) {
+      .app { grid-template-columns: 1fr; }
+      .arena { min-height: 710px; }
+      .controls { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card arena">
+      <div class="topbar">
+        <div class="title">
+          <h1>GK Reaction Trainer</h1>
+          <p>Train BL:R-style GK reads: follow the white line endpoint. Top side endpoint = Space + side dive, low side endpoint = side dive only. Yellow circle stays on ground and can bait left/right.</p>
+        </div>
+        <div class="pill" id="roundInfo">Ready</div>
+      </div>
+
+      <div class="center-message">
+        <div class="status" id="status">Start</div>
+        <div class="subtitle" id="subtitle">Click start, read where the white line ends, then choose jump, side dive, or jump + side dive.</div>
+        <div class="combo" id="comboPreview">
+          <kbd>SPACE</kbd>
+          <span>center save</span>
+        </div>
+      </div>
+
+      <div class="reaction-zone" id="zone">
+        <div class="field-visual" id="fieldVisual" aria-hidden="true">
+          <div class="goal-cage">
+            <div class="net-grid"></div>
+            <div class="target-bin bin-left-high" id="bin-left-high"></div>
+            <div class="target-bin bin-right-high" id="bin-right-high"></div>
+            <div class="target-bin bin-left-low" id="bin-left-low"></div>
+            <div class="target-bin bin-right-low" id="bin-right-low"></div>
+            <div class="target-bin bin-center" id="bin-center"></div>
+          </div>
+          <div class="height-cue" id="heightCue"></div>
+          <svg class="shot-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line id="trueLine" class="true-line" x1="50" y1="93" x2="50" y2="46"></line>
+            <circle id="targetDot" class="target-dot" cx="50" cy="46" r="1.7"></circle>
+          </svg>
+          <div class="shooter-dot"></div>
+          <div class="landing-circle" id="landingCircle"></div>
+        </div>
+        <div class="keeper" id="keeper"></div>
+      </div>
+
+      <div class="controls">
+        <div class="hint">
+          Visual rule: <b>look at the white line endpoint</b>. Yellow circle is only ground bait. Center endpoint = <b>Space</b>. Low side endpoint = <b>A/D + Q</b>. Top side endpoint = <b>Space + A/D + Q</b>.
+        </div>
+        <div>
+          <button id="startBtn">Start round</button>
+          <button class="ghost-btn" id="autoBtn">Auto next: OFF</button>
+          <button class="ghost-btn" id="resetBtn">Reset stats</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card side">
+      <div>
+        <div class="section-title">Stats</div>
+        <div class="stat-grid">
+          <div class="stat"><span>Last</span><strong id="lastStat">—</strong></div>
+          <div class="stat"><span>Best</span><strong id="bestStat">—</strong></div>
+          <div class="stat"><span>Average</span><strong id="avgStat">—</strong></div>
+          <div class="stat"><span>Accuracy</span><strong id="accStat">—</strong></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">Difficulty</div>
+        <select id="difficulty">
+          <option value="normal">Normal: 1.0s–3.5s wait</option>
+          <option value="fast">Fast: 0.6s–2.0s wait</option>
+          <option value="chaos">Chaos: 0.3s–1.4s wait</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="section-title">Controls</div>
+        <div class="keys">
+          <div class="key-row"><span>Center / jump save</span><b>Space</b></div>
+          <div class="key-row"><span>Low right side</span><b>D + Q</b></div>
+          <div class="key-row"><span>Low left side</span><b>A + Q</b></div>
+          <div class="key-row"><span>Top right side</span><b>Space + D + Q</b></div>
+          <div class="key-row"><span>Top left side</span><b>Space + A + Q</b></div>
+          <div class="key-row"><span>Start / next round</span><b>Enter</b></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">Recent attempts</div>
+        <div class="history" id="history"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const directions = ["front", "left", "right"];
+
+    const shotTypes = [
+      { id: "centerHigh", direction: "front", height: "high", needsJump: true, needsDive: false, text: "center jump save", input: "Space", target: { x: 50, y: 42 }, bin: "center" },
+      { id: "centerLow", direction: "front", height: "low", needsJump: true, needsDive: false, text: "center ping/jump save", input: "Space", target: { x: 50, y: 62 }, bin: "center" },
+      { id: "leftLow", direction: "left", height: "low", needsJump: false, needsDive: true, text: "low left side", input: "A + Q", target: { x: 24, y: 67 }, bin: "left-low" },
+      { id: "rightLow", direction: "right", height: "low", needsJump: false, needsDive: true, text: "low right side", input: "D + Q", target: { x: 76, y: 67 }, bin: "right-low" },
+      { id: "leftHigh", direction: "left", height: "high", needsJump: true, needsDive: true, text: "top left side", input: "Space + A + Q", target: { x: 23, y: 27 }, bin: "left-high" },
+      { id: "rightHigh", direction: "right", height: "high", needsJump: true, needsDive: true, text: "top right side", input: "Space + D + Q", target: { x: 77, y: 27 }, bin: "right-high" }
+    ];
+
+    const zone = document.getElementById("zone");
+    const statusText = document.getElementById("status");
+    const subtitle = document.getElementById("subtitle");
+    const comboPreview = document.getElementById("comboPreview");
+    const keeper = document.getElementById("keeper");
+    const fieldVisual = document.getElementById("fieldVisual");
+    const landingCircle = document.getElementById("landingCircle");
+    const trueLine = document.getElementById("trueLine");
+    const targetDot = document.getElementById("targetDot");
+    const heightCue = document.getElementById("heightCue");
+    const roundInfo = document.getElementById("roundInfo");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const autoBtn = document.getElementById("autoBtn");
+    const difficulty = document.getElementById("difficulty");
+    const historyBox = document.getElementById("history");
+
+    const lastStat = document.getElementById("lastStat");
+    const bestStat = document.getElementById("bestStat");
+    const avgStat = document.getElementById("avgStat");
+    const accStat = document.getElementById("accStat");
+
+    let state = "idle";
+    let timer = null;
+    let currentShot = null;
+    let currentCircleDirection = null;
+    let signalTime = 0;
+    let keyTimes = {};
+    let pressed = new Set();
+    let attempts = JSON.parse(localStorage.getItem("gkReactionAttempts") || "[]");
+    let autoNext = JSON.parse(localStorage.getItem("gkAutoNext") || "false");
+    let autoTimer = null;
+    let autoCountdown = null;
+
+    const comboWindowMs = 110;
+    const jumpWindowMs = 180;
+
+    function waitRange() {
+      if (difficulty.value === "fast") return [600, 2000];
+      if (difficulty.value === "chaos") return [300, 1400];
+      return [1000, 3500];
+    }
+
+    function save() {
+      localStorage.setItem("gkReactionAttempts", JSON.stringify(attempts.slice(-100)));
+      localStorage.setItem("gkAutoNext", JSON.stringify(autoNext));
+    }
+
+    function updateAutoButton() {
+      autoBtn.textContent = autoNext ? "Auto next: ON" : "Auto next: OFF";
+    }
+
+    function cancelAutoNext() {
+      clearTimeout(autoTimer);
+      clearInterval(autoCountdown);
+      autoTimer = null;
+      autoCountdown = null;
+    }
+
+    function scheduleAutoNext() {
+      cancelAutoNext();
+      if (!autoNext) return;
+
+      let left = 5;
+      roundInfo.textContent = `Next in ${left}s`;
+      autoCountdown = setInterval(() => {
+        left -= 1;
+        if (left > 0 && state === "result") {
+          roundInfo.textContent = `Next in ${left}s`;
+        }
+      }, 1000);
+
+      autoTimer = setTimeout(() => {
+        if (state === "result" && autoNext) startRound();
+      }, 5000);
+    }
+
+    function ms(value) {
+      return `${Math.round(value)}ms`;
+    }
+
+    function renderCombo(keys, label) {
+      comboPreview.innerHTML = keys.map(k => `<kbd>${k}</kbd>`).join("<span>+</span>") + `<span>${label}</span>`;
+    }
+
+    function setZone(mode) {
+      zone.className = `reaction-zone ${mode || ""}`.trim();
+    }
+
+    function resetKeeper() {
+      keeper.className = "keeper";
+    }
+
+    function clearBins() {
+      document.querySelectorAll(".target-bin").forEach(bin => bin.classList.remove("active"));
+    }
+
+    function hideBallRead() {
+      fieldVisual.className = "field-visual";
+      landingCircle.className = "landing-circle";
+      trueLine.setAttribute("x2", "50");
+      trueLine.setAttribute("y2", "46");
+      targetDot.setAttribute("cx", "50");
+      targetDot.setAttribute("cy", "46");
+      heightCue.className = "height-cue";
+      heightCue.textContent = "";
+      clearBins();
+    }
+
+    function chooseLandingCircle(trueDirection) {
+      const shouldFake = Math.random() < 0.55;
+      if (!shouldFake) return trueDirection;
+      const otherDirections = directions.filter(d => d !== trueDirection);
+      return otherDirections[Math.floor(Math.random() * otherDirections.length)];
+    }
+
+    function showBallRead() {
+      currentCircleDirection = chooseLandingCircle(currentShot.direction);
+      fieldVisual.className = "field-visual visible";
+
+      trueLine.setAttribute("x1", "50");
+      trueLine.setAttribute("y1", "93");
+      trueLine.setAttribute("x2", String(currentShot.target.x));
+      trueLine.setAttribute("y2", String(currentShot.target.y));
+      targetDot.setAttribute("cx", String(currentShot.target.x));
+      targetDot.setAttribute("cy", String(currentShot.target.y));
+
+      landingCircle.className = `landing-circle ${currentCircleDirection}`;
+      heightCue.className = `height-cue ${currentShot.height} visible`;
+      heightCue.textContent = currentShot.height === "high" ? "TOP ENDPOINT" : "LOW ENDPOINT";
+
+      clearBins();
+      const activeBin = document.getElementById(`bin-${currentShot.bin}`);
+      if (activeBin) activeBin.classList.add("active");
+    }
+
+    function renderStats() {
+      const valid = attempts.filter(a => a.correct && typeof a.time === "number");
+      const correctCount = attempts.filter(a => a.correct).length;
+
+      lastStat.textContent = attempts.length && attempts[attempts.length - 1].time
+        ? ms(attempts[attempts.length - 1].time)
+        : "—";
+
+      bestStat.textContent = valid.length ? ms(Math.min(...valid.map(a => a.time))) : "—";
+      avgStat.textContent = valid.length ? ms(valid.reduce((s, a) => s + a.time, 0) / valid.length) : "—";
+      accStat.textContent = attempts.length ? `${Math.round(correctCount / attempts.length * 100)}%` : "—";
+
+      historyBox.innerHTML = attempts.slice(-10).reverse().map(a => {
+        const resultClass = a.correct ? "good" : "bad";
+        const resultText = a.correct ? `${ms(a.time)} · ${a.expected}` : `${a.reason || "wrong"} · wanted ${a.expected}`;
+        return `<div class="history-item"><span>${a.pressed || "—"}</span><b class="${resultClass}">${resultText}</b></div>`;
+      }).join("") || `<div class="history-item"><span>No attempts yet</span><b>—</b></div>`;
+    }
+
+    function startRound() {
+      cancelAutoNext();
+      clearTimeout(timer);
+      state = "waiting";
+      currentShot = shotTypes[Math.floor(Math.random() * shotTypes.length)];
+      signalTime = 0;
+      keyTimes = {};
+      pressed.clear();
+      resetKeeper();
+      hideBallRead();
+      setZone("waiting");
+
+      statusText.textContent = "WAIT";
+      subtitle.textContent = "Get ready. The white line endpoint will show the real save type.";
+      renderCombo(["A", "D", "Q", "SPACE"], "do not pre-press");
+      roundInfo.textContent = `Round ${attempts.length + 1}`;
+      startBtn.textContent = "Restart";
+
+      const [min, max] = waitRange();
+      const delay = min + Math.random() * (max - min);
+      timer = setTimeout(showSignal, delay);
+    }
+
+    function showSignal() {
+      state = "signal";
+      signalTime = performance.now();
+      keyTimes = {};
+      setZone("go");
+      showBallRead();
+
+      statusText.textContent = "READ";
+      subtitle.textContent = "Read the white endpoint: center = jump, low side = side dive, top side = jump + side dive.";
+      renderCombo(["A", "D", "Q", "SPACE"], "choose save input");
+      roundInfo.textContent = currentCircleDirection === currentShot.direction ? "True circle" : "Circle feint";
+    }
+
+    function falseStart(key) {
+      clearTimeout(timer);
+      state = "result";
+      setZone("error");
+      resetKeeper();
+      statusText.textContent = "TOO EARLY";
+      subtitle.textContent = `You pressed ${key.toUpperCase()} before the signal.`;
+      renderCombo(["ENTER"], "start again");
+      roundInfo.textContent = "False start";
+      attempts.push({ correct: false, expected: currentShot ? currentShot.input : "unknown", pressed: key.toUpperCase(), reason: "too early" });
+      save();
+      renderStats();
+      startBtn.textContent = "Try again";
+      scheduleAutoNext();
+    }
+
+    function closeEnough(a, b, windowMs) {
+      return typeof a === "number" && typeof b === "number" && Math.abs(a - b) <= windowMs;
+    }
+
+    function detectInput() {
+      const aTime = keyTimes.a;
+      const dTime = keyTimes.d;
+      const qTime = keyTimes.q;
+      const spaceTime = keyTimes[" "];
+
+      const hasQ = typeof qTime === "number";
+      const hasJump = typeof spaceTime === "number";
+      const leftOK = hasQ && closeEnough(aTime, qTime, comboWindowMs);
+      const rightOK = hasQ && closeEnough(dTime, qTime, comboWindowMs);
+      const jumpOK = hasJump && (!hasQ || closeEnough(spaceTime, qTime, jumpWindowMs));
+
+      let direction = "front";
+      let diveUsed = hasQ;
+      let completedAt = hasQ ? qTime : spaceTime;
+      let label = "Space";
+
+      if (hasQ) {
+        if (leftOK && rightOK) {
+          direction = "conflict";
+          completedAt = Math.max(aTime, dTime, qTime);
+          label = "A + D + Q";
+        } else if (leftOK) {
+          direction = "left";
+          completedAt = Math.max(aTime, qTime);
+          label = "A + Q";
+        } else if (rightOK) {
+          direction = "right";
+          completedAt = Math.max(dTime, qTime);
+          label = "D + Q";
+        } else {
+          direction = "front";
+          completedAt = qTime;
+          label = "Q";
+        }
+      }
+
+      if (jumpOK && diveUsed) {
+        label = `Space + ${label}`;
+        completedAt = Math.max(completedAt, spaceTime);
+      }
+
+      return { direction, jumped: jumpOK, diveUsed, label, completedAt };
+    }
+
+    function evaluateSave() {
+      if (state !== "signal") return;
+      const hasInput = typeof keyTimes.q === "number" || typeof keyTimes[" "] === "number";
+      if (!hasInput) return;
+
+      state = "result";
+      const detected = detectInput();
+      const reaction = detected.completedAt - signalTime;
+
+      const correct = currentShot.needsDive
+        ? detected.diveUsed && detected.direction === currentShot.direction && detected.jumped === currentShot.needsJump
+        : detected.jumped && !detected.diveUsed;
+
+      const keeperClass = currentShot.needsDive
+        ? `${detected.jumped ? "jump " : ""}${detected.direction === "conflict" ? "front" : detected.direction}`
+        : "jump";
+
+      keeper.className = `keeper ${keeperClass}`;
+      setZone(correct ? "go" : "error");
+
+      if (correct) {
+        statusText.textContent = ms(reaction);
+        subtitle.textContent = `Correct: ${currentShot.text}. Nice save.`;
+        roundInfo.textContent = "Saved";
+      } else {
+        statusText.textContent = "WRONG SAVE";
+        subtitle.textContent = `You pressed ${detected.label}, but the white endpoint needed ${currentShot.input}.`;
+        roundInfo.textContent = "Goal conceded";
+      }
+
+      attempts.push({
+        correct,
+        time: correct ? reaction : null,
+        expected: currentShot.input,
+        pressed: detected.label,
+        reason: correct ? null : "wrong input",
+        yellowCircle: `ground ${currentCircleDirection}`
+      });
+
+      save();
+      renderStats();
+      renderCombo(["ENTER"], "next round");
+      startBtn.textContent = "Next round";
+      scheduleAutoNext();
+    }
+
+    document.addEventListener("keydown", (event) => {
+      const key = event.key.toLowerCase();
+      if (!["a", "d", "q", " ", "enter"].includes(key)) return;
+
+      if (key === "enter" && (state === "idle" || state === "result")) {
+        event.preventDefault();
+        startRound();
+        return;
+      }
+
+      if (!["a", "d", "q", " "].includes(key) || event.repeat) return;
+
+      if (state === "waiting") {
+        falseStart(key);
+        return;
+      }
+
+      if (state !== "signal") return;
+
+      event.preventDefault();
+
+      if (!pressed.has(key)) {
+        pressed.add(key);
+        keyTimes[key] = performance.now();
+      }
+
+      if (key === "q" || key === " ") {
+        setTimeout(evaluateSave, jumpWindowMs);
+      }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      pressed.delete(event.key.toLowerCase());
+    });
+
+    startBtn.addEventListener("click", startRound);
+
+    autoBtn.addEventListener("click", () => {
+      autoNext = !autoNext;
+      save();
+      updateAutoButton();
+      if (state === "result") scheduleAutoNext();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      cancelAutoNext();
+      attempts = [];
+      save();
+      renderStats();
+      state = "idle";
+      clearTimeout(timer);
+      setZone("");
+      resetKeeper();
+      hideBallRead();
+      statusText.textContent = "Start";
+      subtitle.textContent = "Click start, read where the white line ends, then choose jump, side dive, or jump + side dive.";
+      renderCombo(["SPACE"], "center save");
+      roundInfo.textContent = "Ready";
+      startBtn.textContent = "Start round";
+    });
+
+    updateAutoButton();
+    renderStats();
+  </script>
+</body>
+</html>
